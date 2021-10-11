@@ -1,12 +1,18 @@
 import os, sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
+import configparser
+import subprocess
 import errno
+# import sqlite3
+import sqlalchemy
+from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import sessionmaker
 import bluepy
 import micropyGPS
 import serial
 import datetime
-import configparser
-import subprocess
+from models.sensor import Sensor
 
 # Read a config file
 configIni = configparser.ConfigParser()
@@ -14,6 +20,12 @@ configIniPath = 'config.ini'
 if not os.path.exists(configIniPath):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), configIniPath)
 configIni.read(configIniPath, encoding='utf-8')
+
+# Connect a database
+engine = sqlalchemy.create_engine('sqlite:///test_db.sqlite3', echo=True)
+Base = declarative_base()
+Base.metadata.create_all(bind=engine)
+
 
 # BD Address
 bdAddress = configIni['BDAddress']
@@ -45,26 +57,28 @@ while True:
             gps.update(x)
     except:
         pass
-    print(gps.latitude[0])
-    print(gps.longitude[0])
+    latitude = gps.latitude[0]
+    longitude = gps.longitude[0]
 
-    '''
-    Write down the code of scanning ble data
-    '''
     scanTime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    print(scanTime)
 
+    bleList = []
     devices = scanner.scan(10)
     for device in devices:
-        deviceAddr = device.addr
-        deviceRssi = device.rssi
-        print(deviceAddr)
-        print(deviceRssi)
-        """
-        make json data
-        """
-        # bleData = {
-        #     'addr': "hoge",
-        #     'rssi': -43,
-        # }
+        ble = {}
+        ble["addr"] = device.addr
+        ble["rssi"] = device.rssi
+        bleList.append(ble)
 
+    """
+    save to database
+    """
+    session = sessionmaker(bind=engine)()
+    sensingData = Sensor()
+    sensingData.scan_time = scanTime
+    sensingData.latitude = latitude
+    sensingData.longitude = longitude
+    sensingData.ble = bleList
+
+    session.add(instance=sensingData)
+    session.commit()
