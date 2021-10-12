@@ -1,18 +1,17 @@
 import os, sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
+sys.path.append('/models/')
 import configparser
 import subprocess
 import errno
-# import sqlite3
 import sqlalchemy
-from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 import bluepy
 import micropyGPS
 import serial
-import datetime
-from models.sensor import Sensor
+import time
+import json
+from db import models
 
 # Read a config file
 configIni = configparser.ConfigParser()
@@ -21,11 +20,10 @@ if not os.path.exists(configIniPath):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), configIniPath)
 configIni.read(configIniPath, encoding='utf-8')
 
-# Connect a database
-engine = sqlalchemy.create_engine('sqlite:///test_db.sqlite3', echo=True)
-Base = declarative_base()
-Base.metadata.create_all(bind=engine)
-
+# Create a database engine
+engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True)
+# models.Base.metadata.drop_all(engine)
+models.Base.metadata.create_all(bind=engine)
 
 # BD Address
 bdAddress = configIni['BDAddress']
@@ -60,25 +58,30 @@ while True:
     latitude = gps.latitude[0]
     longitude = gps.longitude[0]
 
-    scanTime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-
+    scanTime = int(time.time())
+    
     bleList = []
-    devices = scanner.scan(10)
-    for device in devices:
-        ble = {}
-        ble["addr"] = device.addr
-        ble["rssi"] = device.rssi
-        bleList.append(ble)
-
-    """
-    save to database
-    """
-    session = sessionmaker(bind=engine)()
-    sensingData = Sensor()
+    try:
+        devices = scanner.scan(10)
+        for device in devices:
+            ble = {}
+            ble["addr"] = device.addr
+            ble["rssi"] = device.rssi
+            bleList.append(ble)
+    except:
+        pass
+    bleJson = json.dumps(bleList) # from list(python obj) to str(json obj)
+    
+    # save to a database
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    sensingData = models.Sensor()
     sensingData.scan_time = scanTime
     sensingData.latitude = latitude
     sensingData.longitude = longitude
-    sensingData.ble = bleList
+    sensingData.ble = bleJson
 
     session.add(instance=sensingData)
     session.commit()
+    
+    time.sleep(5)
