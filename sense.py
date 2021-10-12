@@ -1,12 +1,17 @@
 import os, sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
+sys.path.append('/models/')
+import configparser
+import subprocess
 import errno
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 import bluepy
 import micropyGPS
 import serial
-import datetime
-import configparser
-import subprocess
+import time
+import json
+from db import models
 
 # Read a config file
 configIni = configparser.ConfigParser()
@@ -14,6 +19,11 @@ configIniPath = 'config.ini'
 if not os.path.exists(configIniPath):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), configIniPath)
 configIni.read(configIniPath, encoding='utf-8')
+
+# Create a database engine
+engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True)
+# models.Base.metadata.drop_all(engine)
+models.Base.metadata.create_all(bind=engine)
 
 # BD Address
 bdAddress = configIni['BDAddress']
@@ -45,26 +55,33 @@ while True:
             gps.update(x)
     except:
         pass
-    print(gps.latitude[0])
-    print(gps.longitude[0])
+    latitude = gps.latitude[0]
+    longitude = gps.longitude[0]
 
-    '''
-    Write down the code of scanning ble data
-    '''
-    scanTime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    print(scanTime)
+    scanTime = int(time.time())
+    
+    bleList = []
+    try:
+        devices = scanner.scan(10)
+        for device in devices:
+            ble = {}
+            ble["addr"] = device.addr
+            ble["rssi"] = device.rssi
+            bleList.append(ble)
+    except:
+        pass
+    bleJson = json.dumps(bleList) # from list(python obj) to str(json obj)
+    
+    # save to a database
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    sensingData = models.Sensor()
+    sensingData.scan_time = scanTime
+    sensingData.latitude = latitude
+    sensingData.longitude = longitude
+    sensingData.ble = bleJson
 
-    devices = scanner.scan(10)
-    for device in devices:
-        deviceAddr = device.addr
-        deviceRssi = device.rssi
-        print(deviceAddr)
-        print(deviceRssi)
-        """
-        make json data
-        """
-        # bleData = {
-        #     'addr': "hoge",
-        #     'rssi': -43,
-        # }
-
+    session.add(instance=sensingData)
+    session.commit()
+    
+    time.sleep(5)
