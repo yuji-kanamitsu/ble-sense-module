@@ -21,13 +21,13 @@ if not os.path.exists(configIniPath):
 configIni.read(configIniPath, encoding='utf-8')
 
 # Create a database engine
-engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True)
-# models.Base.metadata.drop_all(engine)
+# engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True)
+engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=False) # show query log on console
 models.Base.metadata.create_all(bind=engine)
 
 # BD Address
 bdAddress = configIni['BDAddress']
-RASPBERRY_BD_ADDRESS = bdAddress.get('raspberryPi')
+# RASPBERRY_BD_ADDRESS = bdAddress.get('raspberryPi')
 DONGLE_BD_ADDRESS = bdAddress.get('dongle')
 
 # Select BLE device
@@ -45,6 +45,7 @@ gps = micropyGPS.MicropyGPS(9, 'dd')
 
 ### START SCAN ###
 while True:
+    print("[Sensing...]")
     try:
         s = serial.Serial('/dev/serial0', 9600, timeout=1000)
         s.readline()
@@ -55,9 +56,9 @@ while True:
             gps.update(x)
     except:
         pass
+        
     latitude = gps.latitude[0]
     longitude = gps.longitude[0]
-
     scanTime = int(time.time())
     
     bleList = []
@@ -70,18 +71,26 @@ while True:
             bleList.append(ble)
     except:
         pass
-    bleJson = json.dumps(bleList) # from list(python obj) to str(json obj)
+        
+    bleJson = json.dumps(bleList) # convert python object to str(json obj)
     
     # save to a database
     Session = sessionmaker(bind=engine)
     session = Session()
-    sensingData = models.Sensor()
-    sensingData.scan_time = scanTime
-    sensingData.latitude = latitude
-    sensingData.longitude = longitude
-    sensingData.ble = bleJson
-
-    session.add(instance=sensingData)
+    sensor = models.Sensor()
+    sensor.scan_time = scanTime
+    sensor.latitude = latitude
+    sensor.longitude = longitude
+    sensor.ble = bleJson
+    
+    session.add(instance=sensor)
     session.commit()
+    
+    print("[Sensing Completed!]")
+    print("---Save Data---")
+    print("| scan_time | latitude | longitude | addr_num |")
+    print("| {} | {} | {} | {} |".format(scanTime, latitude, longitude, len(bleList)))
+    # print(bleJson)
+    print("------------------------------")
     
     time.sleep(5)
