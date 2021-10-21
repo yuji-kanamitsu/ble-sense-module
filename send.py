@@ -1,7 +1,7 @@
 import os
 import time
+import errno
 import sqlalchemy
-# from sqlalchemy import and_, or_, not_
 from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
 import urllib.request
@@ -17,6 +17,9 @@ if not os.path.exists(configIniPath):
 configIni.read(configIniPath, encoding='utf-8')
 
 # setting
+db = configIni['DB']
+dbName = db.get('name')
+
 api = configIni['API']
 url = api.get('url')
 key = api.get('key')
@@ -40,8 +43,8 @@ def bleToList(record, colName):
 
 while True:
     # create database engine
-    # engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True)
-    engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=False)
+    # engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=True)
+    engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=False)
     session = sessionmaker(bind=engine)()
 
     # send data
@@ -52,8 +55,7 @@ while True:
         
         dictRecords = [toDict(record) for record in records] # convert type of record
         newDictRecords = [bleToList(record, bleColName) for record in dictRecords] # convert type of ble column of record
-        data_time = newDictRecords[0]['scan_time']
-        # print("'data_time: {}' is the scan_time of the first record (id: {})".format(data_time, newDictRecords[0]['id']))
+        data_time = newDictRecords[0]['t']
         
         # delete not post columns
         for dictRecord in newDictRecords:
@@ -74,34 +76,31 @@ while True:
         # print(postData)
         
         # POST
-        #request = urllib.request.Request(
-        #    url = url,
-        #    data = postData,
-        #    method = method
-        #)
+        request = urllib.request.Request(
+            url = url,
+            data = postData.encode('utf-8'),
+            method = method
+        )
 
-        #try:
-        #    with urllib.request.urlopen(request) as response:
-        #        body = response.read()
-        #except urllib.error.HTTPError as err:
-        #    print(err.code)
-        #    pass
-        #except urllib.error.URLError as err:
-        #    print(err.reason)
-        #    pass
-        
-        '''
-        set a flag
-        '''
-        # update flag of sent data
-        print("[Transmission completed!]")
-        print("---Sent Data---")
-        print("| id | scan_time | latitude | longitude | addr_num |")
-        for record in records:
-            print("| {} | {} | {} | {} | {} |".format(record.id, record.scan_time, record.latitude, record.longitude, int(len(record.ble)/44)))
-            record.flag = 1
-        session.commit()
-        print("------------------------------")
+        try:
+            with urllib.request.urlopen(request) as response:
+                body = response.read()
+            
+            # update flag of sent data
+            print("[Transmission completed!]")
+            # print("---Sent Data---")
+            print("| id | scan_time | latitude | longitude | addr_num |")
+            for record in records:
+                print("| {} | {} | {} | {} | {} |".format(record.id, record.t, record.lat, record.lng, int(len(record.ble)/44)))
+                record.flag = 1
+            session.commit()
+            print("------------------------------")
+        except urllib.error.HTTPError as err:
+            print(err.code)
+            pass
+        except urllib.error.URLError as err:
+            print(err.reason)
+            pass
     
     else:
         print("[All data has been sent...]")
