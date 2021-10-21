@@ -11,7 +11,7 @@ class Sensor(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_at = Column(DateTime, default=datetime.datetime.now)
     flag = Column(Integer, default=0) # flag == 0 -> means not sent yet
-    scan_time = Column(Integer)
-    latitude = Column(Float)
-    longitude = Column(Float)
-    ble = Column(String)
+    t = Column('scan_time', Integer)
+    lat = Column('latitude', Float)
+    lng = Column('longitude', Float)
+    ble = Column('ble', String)

@@ -21,8 +21,10 @@ if not os.path.exists(configIniPath):
 configIni.read(configIniPath, encoding='utf-8')
 
 # Create a database engine
-# engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True)
-engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=False) # show query log on console
+db = configIni['DB']
+dbName = db.get('name')
+# engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True) # show query log on console
+engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=False)
 models.Base.metadata.create_all(bind=engine)
 
 # BD Address
@@ -43,9 +45,11 @@ scanner = bluepy.btle.Scanner(str(hciTxt[hciIndex]))
 
 gps = micropyGPS.MicropyGPS(9, 'dd')
 
+print("---Save Data---")
+print("| scan_time | latitude | longitude | addr_num |")
+
 ### START SCAN ###
 while True:
-    print("[Sensing...]")
     try:
         s = serial.Serial('/dev/serial0', 9600, timeout=1000)
         s.readline()
@@ -78,19 +82,16 @@ while True:
     Session = sessionmaker(bind=engine)
     session = Session()
     sensor = models.Sensor()
-    sensor.scan_time = scanTime
-    sensor.latitude = latitude
-    sensor.longitude = longitude
+    sensor.t = scanTime
+    sensor.lat = latitude
+    sensor.lng = longitude
     sensor.ble = bleJson
     
     session.add(instance=sensor)
     session.commit()
     
-    print("[Sensing Completed!]")
-    print("---Save Data---")
-    print("| scan_time | latitude | longitude | addr_num |")
+    
     print("| {} | {} | {} | {} |".format(scanTime, latitude, longitude, len(bleList)))
     # print(bleJson)
-    print("------------------------------")
     
     time.sleep(5)
