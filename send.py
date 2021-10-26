@@ -1,4 +1,5 @@
-import os
+import os, sys
+sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
 import time
 import errno
 import sqlalchemy
@@ -9,6 +10,9 @@ import configparser
 import json
 from db.models import Sensor
 
+# Change a current directly
+os.chdir('/home/pi/Documents/ble-sense-module')
+
 # Read a config file
 configIni = configparser.ConfigParser()
 configIniPath = 'config.ini'
@@ -16,7 +20,7 @@ if not os.path.exists(configIniPath):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), configIniPath)
 configIni.read(configIniPath, encoding='utf-8')
 
-# setting
+# Setting
 db = configIni['DB']
 dbName = db.get('name')
 
@@ -86,6 +90,7 @@ while True:
             with urllib.request.urlopen(request) as response:
                 body = response.read()
             
+            print(response.getcode())
             # update flag of sent data
             print("[Transmission completed!]")
             # print("---Sent Data---")

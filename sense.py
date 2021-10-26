@@ -1,6 +1,5 @@
 import os, sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
-sys.path.append('/models/')
 import configparser
 import subprocess
 import errno
@@ -12,6 +11,9 @@ import serial
 import time
 import json
 from db import models
+
+# Change a current directly
+os.chdir('/home/pi/Documents/ble-sense-module')
 
 # Read a config file
 configIni = configparser.ConfigParser()
