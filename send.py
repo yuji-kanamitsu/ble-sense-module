@@ -54,9 +54,6 @@ while True:
     # send data
     records = session.query(Sensor).filter((Sensor.flag == 0) & (Sensor.ble != '[]')).all() # select data for post
     if records:
-        # selectedIdList = [record.id for record in records] # use update phase later
-        # print(selectedIdList)
-        
         dictRecords = [toDict(record) for record in records] # convert type of record
         newDictRecords = [bleToList(record, bleColName) for record in dictRecords] # convert type of ble column of record
         data_time = newDictRecords[0]['t']
@@ -89,11 +86,10 @@ while True:
         try:
             with urllib.request.urlopen(request) as response:
                 body = response.read()
-            
             print(response.getcode())
+
             # update flag of sent data
             print("[Transmission completed!]")
-            # print("---Sent Data---")
             print("| id | scan_time | latitude | longitude | addr_num |")
             for record in records:
                 print("| {} | {} | {} | {} | {} |".format(record.id, record.t, record.lat, record.lng, int(len(record.ble)/44)))
