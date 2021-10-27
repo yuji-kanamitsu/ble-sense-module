@@ -85,6 +85,8 @@ while True:
         try:
             with urllib.request.urlopen(request) as response:
                 body = response.read()
+
+            # print(response.getcode())
             
             # update flag of sent data
             print("[Transmission completed!]")
