@@ -27,23 +27,14 @@ engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=Fa
 models.Base.metadata.create_all(bind=engine)
 
 while True:
-    # now
-    dtNow = datetime.datetime.now()
-    print(dtNow)
+    # get time
+    dtNow = datetime.datetime.now() # now
+    timeDelta = timedelta(days=1) # 7 days
+    daysAgo = int((dtNow-timeDelta).timestamp()) # 7 days ago (UNIX timestamp integer)
 
-    # 7 days
-    timeDelta = timedelta(days=7)
-    print(timeDelta)
-
-    # 7 days ago (UNIX timestamp integer)
-    daysAgo = int((dtNow-timeDelta).timestamp())
-
-    # select records
+    # delete records
     session = sessionmaker(bind=engine)()
-    records = session.query(Sensor).filter(Sensor.t <= daysAgo).all()
-    print(records)
+    session.query(Sensor).filter(Sensor.t <= daysAgo).delete()
+    session.commit()
 
-    # if (scan_time < now - 7days) -> delete
-    print(dtNow - timeDelta)
-
-    # time.sleep(86400)
+    time.sleep(86400)
