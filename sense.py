@@ -1,8 +1,6 @@
 import os, sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
-import configparser
 import subprocess
-import errno
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import bluepy
@@ -10,23 +8,16 @@ import micropyGPS
 import serial
 import time
 import json
+from myconfig import configmaker
 from db import models
 
-# Change a current directly
-os.chdir('/home/pi/Documents/ble-sense-module')
-
 # Read a config file
-configIni = configparser.ConfigParser()
-configIniPath = 'config.ini'
-if not os.path.exists(configIniPath):
-    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), configIniPath)
-configIni.read(configIniPath, encoding='utf-8')
+configIni = configmaker.read_config()
 
 # Create a database engine
 db = configIni['DB']
-dbName = db.get('name')
-# engine = sqlalchemy.create_engine('sqlite:///db/test_db.sqlite3', echo=True) # show query log on console
-engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=False)
+dbPath = db.get('path')
+engine = sqlalchemy.create_engine('sqlite:///' + dbPath, echo=False)
 models.Base.metadata.create_all(bind=engine)
 
 # BD Address
@@ -81,8 +72,7 @@ while True:
     bleJson = json.dumps(bleList) # convert python object to str(json obj)
     
     # save to a database
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session = sessionmaker(bind=engine)()
     sensor = models.Sensor()
     sensor.t = scanTime
     sensor.lat = latitude
