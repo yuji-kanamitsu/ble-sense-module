@@ -1,28 +1,21 @@
-import os, sys
+import sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
 import time
-import errno
 import sqlalchemy
 from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
 import urllib.request
-import configparser
 import json
+from myconfig import configmaker
+from db import models
 from db.models import Sensor
 
-# Change a current directly
-os.chdir('/home/pi/Documents/ble-sense-module')
+# read a config file
+configIni = configmaker.read_config()
 
-# Read a config file
-configIni = configparser.ConfigParser()
-configIniPath = 'config.ini'
-if not os.path.exists(configIniPath):
-    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), configIniPath)
-configIni.read(configIniPath, encoding='utf-8')
-
-# Setting
+# setting
 db = configIni['DB']
-dbName = db.get('name')
+dbPath = db.get('path')
 
 api = configIni['API']
 url = api.get('url')
@@ -45,13 +38,13 @@ def bleToList(record, colName):
     record[colName] = json.loads(record[colName])
     return record
 
-while True:
-    # create database engine
-    # engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=True)
-    engine = sqlalchemy.create_engine('sqlite:///db/' + dbName + '.sqlite3', echo=False)
-    session = sessionmaker(bind=engine)()
+# create a database engine
+engine = sqlalchemy.create_engine('sqlite:///' + dbPath, echo=False)
+models.Base.metadata.create_all(bind=engine)
 
+while True:
     # send data
+    session = sessionmaker(bind=engine)()
     records = session.query(Sensor).filter((Sensor.flag == 0) & (Sensor.ble != '[]')).all() # select data for post
     if records:
         dictRecords = [toDict(record) for record in records] # convert type of record
