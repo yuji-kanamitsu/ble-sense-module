@@ -1,4 +1,4 @@
-# "Warning": If you work a different directly, please change 'cwd' accordingly.
+# "Warning": If you work at a different directly, please change 'cwd' accordingly.
 
 import os
 import configparser

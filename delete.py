@@ -9,10 +9,10 @@ from myconfig import configmaker
 from db import models
 from db.models import Sensor
 
-# Read a config file
+# read a config file
 configIni = configmaker.read_config()
 
-# Setting DB
+# setting DB
 db = configIni['DB']
 dbPath = db.get('path')
 engine = sqlalchemy.create_engine('sqlite:///' + dbPath, echo=False)

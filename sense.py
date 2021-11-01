@@ -11,10 +11,10 @@ import json
 from myconfig import configmaker
 from db import models
 
-# Read a config file
+# read a config file
 configIni = configmaker.read_config()
 
-# Create a database engine
+# create a database engine
 db = configIni['DB']
 dbPath = db.get('path')
 engine = sqlalchemy.create_engine('sqlite:///' + dbPath, echo=False)
@@ -25,7 +25,7 @@ bdAddress = configIni['BDAddress']
 # RASPBERRY_BD_ADDRESS = bdAddress.get('raspberryPi')
 DONGLE_BD_ADDRESS = bdAddress.get('dongle')
 
-# Select BLE device
+# select BLE device
 hciconfig = subprocess.run(["hciconfig"], capture_output=True, text=True).stdout
 # [TODO] when this raspberry pi doesn't detect the USB dongle, write an error message.
 if hciconfig.count(DONGLE_BD_ADDRESS) == 0:
