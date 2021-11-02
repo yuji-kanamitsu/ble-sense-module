@@ -62,7 +62,7 @@ def read_config():
 ...
 
 # 追加
-sudo python3 /home/pi/[path]/sense.py & python3 /home/pi/[path]/send.py & /home/pi/[path]/delete.py $ # 絶対パスで指定する必要あり
+sudo python3 /home/pi/[path]/sense.py & python3 /home/pi/[path]/send.py & python3 /home/pi/[path]/delete.py $ # 絶対パスで指定する必要あり
 
 exit 0
 ```
