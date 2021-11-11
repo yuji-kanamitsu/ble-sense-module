@@ -16,12 +16,27 @@
 
 
 ## Set up
-#### 1. ダウンロード
+#### 1. イメージの書き込み (for MAC)
+空のmicroSDを用意。(注意!：容量はコピー元と同じにすること。)<br>
+- ディスクリストの確認
 ```
-git clone https://github.com/yuji-kanamitsu/ble-sense-module.git
+diskutil list
 ```
 
-#### 2. BLEドングルの設定
+- どのディスクにmicroSDが認識されているのか確認し、それをunmountする。
+```
+diskutil unmountDisk /dev/disk[?]
+```
+
+- イメージファイルの書き込み
+```
+sudo dd if=[image_file_path] of=/dev/rdisk[?] bs=1m
+```
+数十分かかる。<br>
+
+参考：https://www.sutekishift.tokyo/entry/raspi-backup-sdcard
+
+#### 2. BLEドングルとラズパイIDの設定
 ❏ ポート解放<br>
 GUIで操作する場合: `menu` -> `setting` -> `interface` -> `serial port` -> `"on"`
 
@@ -44,10 +59,10 @@ dongle = [bd_address] # 先ほどチェックしたアドレスに変更
 ...
 
 [Meta]
-sensorID = [sensor_id] # ついでにセンサーIDも適宜変更
+sensorID = [sensor_id] # ついでにセンサーID（ラズパイID）も適宜変更
 ```
 
-#### 3. ワーキングディレクトリの設定
+#### 3. ワーキングディレクトリの設定 (イメージ化により不要)
 myconfig/configmaker.py
 ```
 ...
@@ -56,7 +71,7 @@ def read_config():
   cwd = "[../ble-sense-module]" # プロジェクトをダウンロードした場所に変更
 ```
 
-#### 4. 自動実行の設定
+#### 4. 自動実行の設定(イメージ化により不要)
 /etc/rc.local
 ```
 ...
@@ -67,7 +82,7 @@ sudo python3 /home/pi/[path]/sense.py & python3 /home/pi/[path]/send.py & python
 exit 0
 ```
 
-#### 5. データベースの権限変更 (不要にしたいけどまだできてない)
+#### 5. データベースの権限変更 (イメージ化により不要)
 一度`sense.py`を実行してみる。
 ```
 sudo python3 sense.py
