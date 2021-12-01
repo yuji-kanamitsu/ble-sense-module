@@ -1,22 +1,17 @@
 import sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
 import time
-import sqlalchemy
 from sqlalchemy import inspect
-from sqlalchemy.orm import sessionmaker
 import urllib.request
 import json
 from myconfig import configmaker
-from db import models
-from db.models import Sensor
+from orm import Session
+from orm.models import Sensor
 
 # read a config file
 configIni = configmaker.read_config()
 
 # setting
-db = configIni['DB']
-dbPath = db.get('path')
-
 api = configIni['API']
 url = api.get('url')
 key = api.get('key')
@@ -38,13 +33,9 @@ def bleToList(record, colName):
     record[colName] = json.loads(record[colName])
     return record
 
-# create a database engine
-engine = sqlalchemy.create_engine('sqlite:///' + dbPath, echo=False)
-models.Base.metadata.create_all(bind=engine)
-
 while True:
     # send data
-    session = sessionmaker(bind=engine)()
+    session = Session()
     records = session.query(Sensor).filter((Sensor.flag == 0) & (Sensor.ble != '[]')).all() # select data for post
     if records:
         dictRecords = [toDict(record) for record in records] # convert type of record
@@ -99,5 +90,7 @@ while True:
     else:
         print("[All data has been sent...]")
         pass
+
+    session.close()
     
     time.sleep(20)

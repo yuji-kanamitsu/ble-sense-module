@@ -1,24 +1,17 @@
 import os, sys
 sys.path.append('/home/pi/.local/lib/python3.7/site-packages')
 import subprocess
-import sqlalchemy
-from sqlalchemy.orm import sessionmaker
 import bluepy
 import micropyGPS
 import serial
 import time
 import json
 from myconfig import configmaker
-from db import models
+from orm import Session
+from orm.models import Sensor
 
 # read a config file
 configIni = configmaker.read_config()
-
-# create a database engine
-db = configIni['DB']
-dbPath = db.get('path')
-engine = sqlalchemy.create_engine('sqlite:///' + dbPath, echo=False)
-models.Base.metadata.create_all(bind=engine)
 
 # BD Address
 bdAddress = configIni['BDAddress']
@@ -72,8 +65,8 @@ while True:
     bleJson = json.dumps(bleList) # convert python object to str(json obj)
     
     # save to a database
-    session = sessionmaker(bind=engine)()
-    sensor = models.Sensor()
+    session = Session()
+    sensor = Sensor()
     sensor.t = scanTime
     sensor.lat = latitude
     sensor.lng = longitude
@@ -81,7 +74,7 @@ while True:
     
     session.add(instance=sensor)
     session.commit()
-    
+    session.close()
     
     print("| {} | {} | {} | {} |".format(scanTime, latitude, longitude, len(bleList)))
     # print(bleJson)

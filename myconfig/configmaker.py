@@ -1,13 +1,8 @@
-# "Warning": If you work at a different directly, please change 'cwd' accordingly.
-
 import os
 import configparser
 import errno
 
 def read_config():
-    cwd = '/home/pi/Documents/ble-sense-module'
-    os.chdir(cwd)
-
     configIni = configparser.ConfigParser()
     configIniPath = 'myconfig/config.ini'
     if not os.path.exists(configIniPath):
